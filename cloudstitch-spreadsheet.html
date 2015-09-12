@@ -1,52 +1,28 @@
-<!--
-@license
-Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
-This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
-The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
-The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
-Code distributed by Google as part of the polymer project is also
-subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
--->
 <link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../../bower_components/iron-ajax/iron-ajax.html">
 
 <!--
-An element providing a solution to no problem in particular.
+An element to provide access to a Cloudstitch spreadsheet.
 
 Example:
 
     <cloudstitch-spreadsheet></cloudstitch-spreadsheet>
 
-@group Seed Elements
+@group Cloudstitch
 @element cloudstitch-spreadsheet
 @demo demo/index.html
 @hero hero.svg
 -->
 <dom-module id="cloudstitch-spreadsheet">
-
-  <style>
-    :host {
-      display: block;
-      box-sizing: border-box;
-    }
-
-    .author img {
-      float: left;
-      margin-right: 5px;
-      max-height: 100px;
-      max-width: 100px;
-    }
-  </style>
-
   <template>
-    <h1>&lt;cloudstitch-spreadsheet&gt;</h1>
-    <content></content>
-    <p class="author">
-      <img src="{{author.image}}">
-      Cheers,<br/>
-      <span class="name">{{author.name}}</span>
-    </p>
+    <iron-ajax
+      id="loadAjax"
+      on-response="_onLoadResponse"
+      on-error="_onLoadError"
+      on-request="_onLoadRequest"
+      debounce-duration="300">
+    </iron-ajax>
   </template>
-
 </dom-module>
 
 <script>
@@ -56,38 +32,48 @@ Example:
     is: 'cloudstitch-spreadsheet',
 
     properties: {
-
       /**
-       * `fancy` indicates that the element should don a monocle and tophat,
-       * while checking its pocket watch.
+       * The Cloudstitch username.
        */
-      fancy: Boolean,
-
-      /**
-       * Describes the author of the element, but is really just an excuse to
-       * show off JSDoc annotations.
-       *
-       * @type {{name: string, image: string}}
-       */
-      author: {
-        type: Object,
-        // Use `value` to provides a default value for a property, by setting it
-        // on your element's prototype.
-        //
-        // If you provide a function, as we do here, Polymer will call that
-        // _per element instance_.
-        //
-        // We do that to ensure that each element gets its own copy of the
-        // value, rather than having it shared across all instances (via the
-        // prototype).
-        value: function() {
-          return {
-            name:  'Dimitri Glazkov',
-            image: 'http://addyosmani.com/blog/wp-content/uploads/2013/04/unicorn.jpg',
-          };
-        }
+      user: {
+        type: String,
+        value: null
       },
 
+      /**
+       * The Cloudstitch project name.
+       */
+      app: {
+        type: String,
+        value: null
+      },
+
+      /**
+       * The label of the Cloudstitch datasource.
+       */
+      label: {
+        type: String,
+        value: 'sheet'
+      },
+
+      /**
+       * The projection of spreadsheet data to load. Options are:
+       *    - `cloudstitch` the native format
+       *    - `items` a list of JSON items
+       *    - `exhibit` a SIMILE Exhibit formatted list
+       */
+      projection: {
+        type: String,
+        value: 'cloudstitch'
+      },
+
+      /**
+       * Whether to load the spreadsheet data manually.
+       */
+      auto: {
+        type: Boolean,
+        value: true
+      }
     },
 
     // Element Lifecycle
@@ -99,6 +85,9 @@ Example:
       //
       // This is the point where you should make modifications to the DOM (when
       // necessary), or kick off any processes the element wants to perform.
+      if (this.auto) {
+        this.loadFromRemote();
+      }
     },
 
     attached: function() {
@@ -120,31 +109,55 @@ Example:
     // Element Behavior
 
     /**
-     * The `cloudstitch-spreadsheet-lasers` event is fired whenever `fireLasers` is called.
-     *
-     * @event cloudstitch-spreadsheet-lasers
-     * @detail {{sound: String}}
+     * Initiates a load of the spreadsheet data.
      */
-
-    /**
-     * Sometimes it's just nice to say hi.
-     *
-     * @param {string} greeting A positive greeting.
-     * @return {string} The full greeting.
-     */
-    sayHello: function(greeting) {
-      var response = greeting || 'Hello World!';
-      return 'cloudstitch-spreadsheet says, ' + response;
+    loadFromRemote: function() {
+      if ((!this.user) || (!this.app)) {
+        return this._loadError("Missing user or app");        
+      }
+      this.$.loader.url = generateUrl();
+      this.$.loader.generateRequest();
     },
 
-    /**
-     * Attempts to destroy this element's enemies with an any beam of light!
-     *
-     * Or, at least, dispatches an event in the vain hope that someone else will
-     * do the zapping.
-     */
-    fireLasers: function() {
-      this.fire('cloudstitch-spreadsheet-lasers', {sound: 'Pew pew!'});
+    _generateUrl: function() {
+      var common = this.user + '/' + this.app + '/datasource/' + this.label;
+      switch (this.projection) {
+        case 'items':
+          return 'data.cloudstitch.io/' + common + '/items/combined.json'; 
+        case 'cloudstitch':
+        default:
+          return 'api.cloudstitch.io/' + common;
+      }
+    },
+
+    _loadError: function() {
+      this.fire('spreadsheet-load-failed');
+    },
+
+    _onLoadResponse: function(r) {
+      var res = r.detail.response;
+      if (!res) {
+        this._loadError("Didn't receive spreadsheet response from Cloudstitch.");
+        return;
+      }
+      if (res && (res.error == true)) {
+        this._loadError("Received error response from Cloudstitch.");
+        return;
+      }
+      if (typeof res.content != undefined) {
+        this.json = res.content;
+      this.fire('spreadsheet-load-completed');
+      } else {
+        this._loadError("Received empty spreadsheet from Cloudstitch.");
+      }      
+    },
+
+    _onLoadRequest: function() {
+      this.fire('spreadsheet-load-began');
+    },
+
+    _onLoadError: function() {
+      this._loadError("Couldn't locate data on Cloudstitch server.");
     }
 
   });
