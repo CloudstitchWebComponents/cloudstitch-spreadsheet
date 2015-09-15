@@ -1,5 +1,5 @@
 <link rel="import" href="../polymer/polymer.html">
-<link rel="import" href="../../bower_components/iron-ajax/iron-ajax.html">
+<link rel="import" href="../iron-ajax/iron-ajax.html">
 
 <!--
 An element to provide access to a Cloudstitch spreadsheet.
@@ -15,151 +15,162 @@ Example:
 -->
 <dom-module id="cloudstitch-spreadsheet">
   <template>
-    <iron-ajax
-      id="loadAjax"
+    <iron-ajax id="loader"
+      auto="{{auto}}"
       on-response="_onLoadResponse"
       on-error="_onLoadError"
       on-request="_onLoadRequest"
-      debounce-duration="300">
+      debounce-duration="300"
+      handle-as="json"
+      last-response="{{content}}"
+      url="{{url}}">
     </iron-ajax>
   </template>
+
+  <script>
+
+    Polymer({
+
+      is: 'cloudstitch-spreadsheet',
+
+      properties: {
+        /**
+         * The Cloudstitch username.
+         */
+        user: {
+          type: String,
+          value: null
+        },
+
+        /**
+         * The Cloudstitch project name.
+         */
+        app: {
+          type: String,
+          value: null
+        },
+
+        /**
+         * The label of the Cloudstitch datasource.
+         */
+        label: {
+          type: String,
+          value: 'sheet'
+        },
+
+        /**
+         * The projection of spreadsheet data to load. Options are:
+         *    - `cloudstitch` the native format
+         *    - `items` a list of JSON items
+         *    - `exhibit` a SIMILE Exhibit formatted list
+         */
+        projection: {
+          type: String,
+          value: 'cloudstitch'
+        },
+
+        /**
+         * Whether to load the spreadsheet data manually.
+         */
+        auto: {
+          type: Boolean,
+          value: true
+        },
+
+        /**
+         * Whether to load the spreadsheet data manually.
+         */
+        content: {
+          type: Object,
+          notify: true
+        },
+
+        url: {
+          computed: '_generateUrl(user, app, label, projection)'
+        }
+
+      },
+
+      // Element Lifecycle
+
+      ready: function() {
+        // `ready` is called after all elements have been configured, but
+        // propagates bottom-up. This element's children are ready, but parents
+        // are not.
+        //
+        // This is the point where you should make modifications to the DOM (when
+        // necessary), or kick off any processes the element wants to perform.
+        if (this.auto) {
+          this.loadFromRemote();
+        }
+      },
+
+      attached: function() {
+        // `attached` fires once the element and its parents have been inserted
+        // into a document.
+        //
+        // This is a good place to perform any work related to your element's
+        // visual state or active behavior (measuring sizes, beginning animations,
+        // loading resources, etc).
+      },
+
+      detached: function() {
+        // The analog to `attached`, `detached` fires when the element has been
+        // removed from a document.
+        //
+        // Use this to clean up anything you did in `attached`.
+      },
+
+      // Element Behavior
+
+      /**
+       * Initiates a load of the spreadsheet data.
+       */
+      loadFromRemote: function() {
+        if ((!this.user) || (!this.app)) {
+          return this._loadError("Missing user or app");        
+        }
+      },
+
+      _generateUrl: function() {
+        var common = this.user + '/' + this.app + '/datasource/' + this.label;
+        switch (this.projection) {
+          case 'items':
+            return 'http://data.cloudstitch.io/' + common + '/items/combined.json'; 
+          case 'cloudstitch':
+          default:
+            return 'http://api.cloudstitch.io/' + common;
+        }
+      },
+
+      _loadError: function() {
+        this.fire('spreadsheet-load-failed');
+      },
+
+      _onLoadResponse: function(r) {
+        var res = r.detail.response;        
+        if (!res) {
+          this._loadError("Didn't receive spreadsheet response from Cloudstitch.");
+          this.content = null;
+          return;
+        }
+        if (res && (res.error == true)) {
+          this._loadError("Received error response from Cloudstitch.");
+          this.content = null;
+          return;
+        }
+        this.content = res;
+      },
+
+      _onLoadRequest: function() {
+        this.fire('spreadsheet-load-began');
+      },
+
+      _onLoadError: function() {
+        this._loadError("Couldn't locate data on Cloudstitch server.");
+      }
+
+    });
+
+  </script>
 </dom-module>
-
-<script>
-
-  Polymer({
-
-    is: 'cloudstitch-spreadsheet',
-
-    properties: {
-      /**
-       * The Cloudstitch username.
-       */
-      user: {
-        type: String,
-        value: null
-      },
-
-      /**
-       * The Cloudstitch project name.
-       */
-      app: {
-        type: String,
-        value: null
-      },
-
-      /**
-       * The label of the Cloudstitch datasource.
-       */
-      label: {
-        type: String,
-        value: 'sheet'
-      },
-
-      /**
-       * The projection of spreadsheet data to load. Options are:
-       *    - `cloudstitch` the native format
-       *    - `items` a list of JSON items
-       *    - `exhibit` a SIMILE Exhibit formatted list
-       */
-      projection: {
-        type: String,
-        value: 'cloudstitch'
-      },
-
-      /**
-       * Whether to load the spreadsheet data manually.
-       */
-      auto: {
-        type: Boolean,
-        value: true
-      }
-    },
-
-    // Element Lifecycle
-
-    ready: function() {
-      // `ready` is called after all elements have been configured, but
-      // propagates bottom-up. This element's children are ready, but parents
-      // are not.
-      //
-      // This is the point where you should make modifications to the DOM (when
-      // necessary), or kick off any processes the element wants to perform.
-      if (this.auto) {
-        this.loadFromRemote();
-      }
-    },
-
-    attached: function() {
-      // `attached` fires once the element and its parents have been inserted
-      // into a document.
-      //
-      // This is a good place to perform any work related to your element's
-      // visual state or active behavior (measuring sizes, beginning animations,
-      // loading resources, etc).
-    },
-
-    detached: function() {
-      // The analog to `attached`, `detached` fires when the element has been
-      // removed from a document.
-      //
-      // Use this to clean up anything you did in `attached`.
-    },
-
-    // Element Behavior
-
-    /**
-     * Initiates a load of the spreadsheet data.
-     */
-    loadFromRemote: function() {
-      if ((!this.user) || (!this.app)) {
-        return this._loadError("Missing user or app");        
-      }
-      this.$.loader.url = generateUrl();
-      this.$.loader.generateRequest();
-    },
-
-    _generateUrl: function() {
-      var common = this.user + '/' + this.app + '/datasource/' + this.label;
-      switch (this.projection) {
-        case 'items':
-          return 'data.cloudstitch.io/' + common + '/items/combined.json'; 
-        case 'cloudstitch':
-        default:
-          return 'api.cloudstitch.io/' + common;
-      }
-    },
-
-    _loadError: function() {
-      this.fire('spreadsheet-load-failed');
-    },
-
-    _onLoadResponse: function(r) {
-      var res = r.detail.response;
-      if (!res) {
-        this._loadError("Didn't receive spreadsheet response from Cloudstitch.");
-        return;
-      }
-      if (res && (res.error == true)) {
-        this._loadError("Received error response from Cloudstitch.");
-        return;
-      }
-      if (typeof res.content != undefined) {
-        this.json = res.content;
-      this.fire('spreadsheet-load-completed');
-      } else {
-        this._loadError("Received empty spreadsheet from Cloudstitch.");
-      }      
-    },
-
-    _onLoadRequest: function() {
-      this.fire('spreadsheet-load-began');
-    },
-
-    _onLoadError: function() {
-      this._loadError("Couldn't locate data on Cloudstitch server.");
-    }
-
-  });
-
-</script>

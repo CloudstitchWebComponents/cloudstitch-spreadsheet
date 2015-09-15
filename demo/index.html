@@ -18,17 +18,20 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   </head>
   <body unresolved>
 
+    <cloudstitch-spreadsheet id="d" user="ted" app="stack-in-a-box-13"></cloudstitch-spreadsheet>
+    
     <p>An example of <code>&lt;cloudstitch-spreadsheet&gt;</code>:</p>
 
-    <button>Say Something</button>
-
-    <cloudstitch-spreadsheet author='{"name": "Lord Meowser", "image": "http://placekitten.com/g/200/300"}' fancy>
-      <h2>Hello cloudstitch-spreadsheet</h2>
-    </cloudstitch-spreadsheet>
-
+    <cloudstitch-spreadsheet id="t" user="ted" app="stack-in-a-box-13"></cloudstitch-spreadsheet>
+    
+    <div id="d"></div>
+    
     <script>
-      document.querySelector('button').addEventListener('click', function() {
-        alert(document.querySelector('cloudstitch-spreadsheet').sayHello('Hallo!'));
+      var t = document.querySelector('#t');      
+      // The dom-change event signifies when the template has stamped its DOM.
+      t.addEventListener('content-changed', function() {
+        document.querySelector('#d').innerHTML = JSON.stringify(t.content);
+        // auto-binding template is ready.
       });
     </script>
 
