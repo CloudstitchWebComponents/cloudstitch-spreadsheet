@@ -16,7 +16,6 @@ Example:
 <dom-module id="cloudstitch-spreadsheet">
   <template>
     <iron-ajax id="loader"
-      auto="{{auto}}"
       on-response="_onLoadResponse"
       on-error="_onLoadError"
       on-request="_onLoadRequest"
@@ -74,7 +73,7 @@ Example:
          */
         auto: {
           type: Boolean,
-          value: true
+          value: false
         },
 
         /**
@@ -85,8 +84,33 @@ Example:
           notify: true
         },
 
+        rowkey: {
+          type: String,
+          value: null
+        },
+
+        globalkey: {
+          type: String,
+          value: null
+        },
+
+        worksheet: {
+          type: String,
+          value: null
+        },
+
+        domain: {
+          type: String,
+          value: 'api.cloudstitch.com'
+        },
+
+        proto: {
+          type: String,
+          value: ''
+        },
+
         url: {
-          computed: '_generateUrl(user, app, label, projection)'
+          computed: '_generateUrl(user, app, label, projection, worksheet, rowkey, globalkey, domain, proto)'
         }
 
       },
@@ -101,7 +125,7 @@ Example:
         // This is the point where you should make modifications to the DOM (when
         // necessary), or kick off any processes the element wants to perform.
         if (this.auto) {
-          this.loadFromRemote();
+          this.load();
         }
       },
 
@@ -126,21 +150,92 @@ Example:
       /**
        * Initiates a load of the spreadsheet data.
        */
-      loadFromRemote: function() {
+      load: function() {
         if ((!this.user) || (!this.app)) {
-          return this._loadError("Missing user or app");        
+          return this._loadError("Missing user or app");
         }
+        this.url = this._generateUrl(this.user, this.app, this.label, this.projection, this.worksheet, this.rowkey, this.globalkey, this.domain, this.proto);      
+        this.$.loader.generateRequest();        
       },
 
-      _generateUrl: function() {
-        var common = this.user + '/' + this.app + '/datasource/' + this.label;
-        switch (this.projection) {
+      _mutate: function(verb, obj, successCb, errorCb, loadingCb) {
+        var ajax = document.createElement('iron-ajax');
+        ajax.addEventListener('on-response', function(resp) {
+          debugger;
+        });
+        ajax.addEventListener('on-error', function(resp) {
+          debugger;
+        });
+        ajax.url = this._generateUrl(this.user, this.app, this.label, this.projection, this.worksheet, null, null, this.domain, this.proto);
+        ajax.generateRequest(); 
+        ajax.method = verb;
+        var body = obj;
+        body._verb = verb;
+        if (this.rowkey) {
+          body._rowkey = this.rowkey;
+        }
+        if (this.globalkey) {
+          body._globalkey = this._globalkey;
+        }
+        ajax.generateRequest();
+        return ajax;
+      },
+
+      append: function(obj) {
+        return this._mutate('POST', obj, successCb, errorCb, loadingCb);
+      },
+
+      update: function(obj) {
+        return this._mutate('PUT', obj, successCb, errorCb, loadingCb);
+      },
+
+      _generateUrl: function(user, app, label, projection, worksheet, rowkey, globalkey, domain, proto) {
+        var qd = {};
+        
+        var query = [];
+
+        if (projection == 'items') {
+          query.push('_shape=items');
+        }
+
+        var base;    
+
+        var protocol = '';        
+        if (proto) {
+          protocol = proto + ':';
+        }
+
+        if (!domain) {
+          domain = 'api.cloudstitch.com';
+        }
+
+        switch (projection) {
           case 'items':
-            return 'http://data.cloudstitch.io/' + common + '/items/combined.json'; 
+            base = protocol + '//' + domain + '/2/';
           case 'cloudstitch':
           default:
-            return 'http://api.cloudstitch.io/' + common;
+            base = protocol + '//' + domain + '/';
         }
+
+        if (rowkey) {
+          query.push('_rowkey=' + encodeURIComponent(rowkey));
+        }
+
+        if (globalkey) {
+          query.push('_key=' + encodeURIComponent(globalkey));
+        }
+
+        var path = user + '/' + app + '/datasource/' + label;
+        
+        if (worksheet) {
+          path += ('/' + worksheet);
+        }
+        var querystring = '';
+        if (query.length > 0) {
+          querystring = '?' + query.join('&');
+        }
+
+        return (base + path + querystring);
       },
 
       _loadError: function() {
@@ -148,7 +243,7 @@ Example:
       },
 
       _onLoadResponse: function(r) {
-        var res = r.detail.response;        
+        var res = r.detail.response;
         if (!res) {
           this._loadError("Didn't receive spreadsheet response from Cloudstitch.");
           this.content = null;
@@ -160,6 +255,7 @@ Example:
           return;
         }
         this.content = res;
+        this.fire('spreadsheet-loaded');
       },
 
       _onLoadRequest: function() {

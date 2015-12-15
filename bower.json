@@ -1,6 +1,6 @@
 {
   "name": "cloudstitch-spreadsheet",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "authors": [
     "Ted Benson <ted@cloudstitch.com>"
   ],
@@ -22,10 +22,11 @@
   ],
   "dependencies": {
     "iron-ajax": "PolymerElements/iron-ajax#~1.0.4",
-    "polymer": "Polymer/polymer#^1.0.0"
+    "polymer": "Polymer/polymer#^1.2.0"
   },
   "devDependencies": {
     "iron-component-page": "PolymerElements/iron-component-page#^1.0.0",
+    "paper-input": "PolymerElements/paper-input",
     "web-component-tester": "*"
   }
 }

@@ -14,26 +14,71 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
     <title>cloudstitch-spreadsheet Demo</title>
     <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
+    <link rel="import" href="../../polymer/polymer.html">
+    <link rel="import" href="../../paper-input/paper-input.html">
     <link rel="import" href="../cloudstitch-spreadsheet.html">
+
   </head>
   <body unresolved>
 
-    <cloudstitch-spreadsheet id="d" user="ted" app="stack-in-a-box-13"></cloudstitch-spreadsheet>
-    
-    <p>An example of <code>&lt;cloudstitch-spreadsheet&gt;</code>:</p>
+    <template is="dom-bind">
+    <style>
+      .ip {
+        display: inline-block;
+        width: 200px;
+      }
+    </style>
+     <p>An example of <code>&lt;cloudstitch-spreadsheet&gt;</code>:</p>
+ 
+      <paper-input class="ip" label="username" value="{{username}}" default="ted"></paper-input>
+      <paper-input class="ip" label="appname" value="{{appname}}" default="fall-2016" ></paper-input>
 
-    <cloudstitch-spreadsheet id="t" user="ted" app="stack-in-a-box-13"></cloudstitch-spreadsheet>
-    
-    <div id="d"></div>
-    
-    <script>
-      var t = document.querySelector('#t');      
-      // The dom-change event signifies when the template has stamped its DOM.
-      t.addEventListener('content-changed', function() {
-        document.querySelector('#d').innerHTML = JSON.stringify(t.content);
-        // auto-binding template is ready.
-      });
-    </script>
+      <br />
+      <paper-input class="ip" label="label" value="{{label}}" default="sheet" ></paper-input>
+      <paper-input class="ip" label="worksheet" value="{{worksheet}}" ></paper-input>
+      <paper-input class="ip" label="projection" value="{{projection}}" default="items" ></paper-input>
+      
+      <br />
+
+      <paper-input class="ip" label="globalkey" value="{{globalkey}}" ></paper-input>
+      <paper-input class="ip" label="rowkey" value="{{rowkey}}" ></paper-input>
+      <br />
+
+      <paper-input class="ip" label="proto" value="{{proto}}" default="https" ></paper-input>
+      <paper-input class="ip" label="domain" value="{{domain}}" ></paper-input>
+      <br />
+
+
+      <button id="loadButton">load</button>
+
+      <pre>{{username}}/{{appname}}:{{label}}</pre>
+      <cloudstitch-spreadsheet id="ss" user="{{username}}" app="{{appname}}" label="{{label}}" worksheet="{{worksheet}}" globalkey="{{globalkey}}" rowkey="{{rowkey}}" projection="{{projection}}" domain="{{domain}}" proto="{{proto}}"></cloudstitch-spreadsheet>
+      
+      <h2>Results</h2>
+      <pre id="results"></pre>
+
+      <script>
+        var ss = document.querySelector('#ss');
+        ss.addEventListener('spreadsheet-loaded', function() {
+          document.querySelector('#results').innerHTML = JSON.stringify(ss.content);
+        });
+
+        document.querySelector('#loadButton').addEventListener('click', function() {
+          ss.load();
+        }); 
+
+        var es = document.getElementsByClassName('ip');
+        for (var i = 0; i < es.length; i++) {
+          try {
+            var d = es[i].attributes.getNamedItem('default').value;
+            es[i].value = d;
+          } catch(e) {
+          }
+        }
+      </script>
+
+    </template>
+
 
   </body>
 </html>
