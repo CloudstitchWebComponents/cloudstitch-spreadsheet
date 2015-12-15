@@ -2,7 +2,6 @@
 
 An element providing a starting point for your own reusable Polymer elements.
 
-
 ## Dependencies
 
 Element dependencies are managed via [Bower](http://bower.io/). You can
@@ -13,7 +12,6 @@ install that via:
 Then, go ahead and download the element's dependencies:
 
     bower install
-
 
 ## Playing With Your Element
 
@@ -29,7 +27,6 @@ And you can run it via:
 
 Once running, you can preview your element at
 `http://localhost:8080/components/cloudstitch-spreadsheet/`, where `cloudstitch-spreadsheet` is the name of the directory containing it.
-
 
 ## Testing Your Element
 
@@ -54,3 +51,22 @@ Then, you can run your tests on _all_ of your local browsers via:
 `wct -p` will keep the browsers alive after test runs (refresh to re-run).
 
 `wct test/some-file.html` will test only the files you specify.
+
+## Publishing
+
+The first time:
+
+`bower register git://github.com/CloudstitchWebComponents/cloudstitch-spreadsheet.git`
+
+Updates: 
+
+Make changes, update `bower.json`, tag, and push with tags:
+
+# commit your changes
+git commit -am "Made some awesome new changes, now its even awesomer"
+
+# tag the commit
+git tag -a v0.0.2 -m "Release version 0.0.2"
+
+# push to GitHub
+git push origin master --tags  
