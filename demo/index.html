@@ -48,14 +48,34 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       <paper-input class="ip" label="domain" value="{{domain}}" ></paper-input>
       <br />
 
+      <h2>GET</h2>
+      <button id="loadButton">GET</button>
 
-      <button id="loadButton">load</button>
-
-      <pre>{{username}}/{{appname}}:{{label}}</pre>
       <cloudstitch-spreadsheet id="ss" user="{{username}}" app="{{appname}}" label="{{label}}" worksheet="{{worksheet}}" globalkey="{{globalkey}}" rowkey="{{rowkey}}" projection="{{projection}}" domain="{{domain}}" proto="{{proto}}"></cloudstitch-spreadsheet>
       
-      <h2>Results</h2>
       <pre id="results"></pre>
+
+      <h2>POST</h2>
+      JSON Here:<br />
+      <textarea id="postJson" rows="8" cols="80">
+        {
+          "FirstName": "Ted"
+        }
+
+      </textarea><br />
+      <pre id="postResults"></pre>
+      <button id="postButton">POST</button>
+
+      <h2>PUT</h2>
+      JSON Here:<br />
+      <textarea id="putJson" rows="8" cols="80">
+        {
+          "FirstName": "Ted"
+        }
+
+      </textarea><br />
+      <pre id="putResults"></pre>
+      <button id="putButton">PUT</button>
 
       <script>
         var ss = document.querySelector('#ss');
@@ -65,6 +85,36 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         document.querySelector('#loadButton').addEventListener('click', function() {
           ss.load();
+        }); 
+
+        document.querySelector('#postButton').addEventListener('click', function() {
+          var obj = JSON.parse(document.querySelector('#postJson').value);
+          ss.append(obj,
+            function() {
+              document.querySelector('#postResults').innerHTML = "Success";
+            },
+            function() {
+              document.querySelector('#postResults').innerHTML = "Error";
+            },
+            function() {
+              document.querySelector('#postResults').innerHTML = "Loading";
+            }
+          );
+        }); 
+
+        document.querySelector('#putButton').addEventListener('click', function() {
+          var obj = JSON.parse(document.querySelector('#putJson').value);
+          ss.append(obj,
+            function() {
+              document.querySelector('#putResults').innerHTML = "Success";
+            },
+            function() {
+              document.querySelector('#putResults').innerHTML = "Error";
+            },
+            function() {
+              document.querySelector('#putResults').innerHTML = "Loading";
+            }
+          );
         }); 
 
         var es = document.getElementsByClassName('ip');

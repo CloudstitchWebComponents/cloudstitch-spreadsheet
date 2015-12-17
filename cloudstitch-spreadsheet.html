@@ -160,32 +160,46 @@ Example:
 
       _mutate: function(verb, obj, successCb, errorCb, loadingCb) {
         var ajax = document.createElement('iron-ajax');
-        ajax.addEventListener('on-response', function(resp) {
-          debugger;
+        ajax.addEventListener('response', function(resp) {
+          if ((successCb) && (typeof successCb == 'function')) {
+            successCb(resp);
+          }
         });
-        ajax.addEventListener('on-error', function(resp) {
-          debugger;
+        ajax.addEventListener('error', function(resp) {
+          if ((errorCb) && (typeof errorCb == 'function')) {
+            errorCb(resp);
+          }
+        });
+        ajax.addEventListener('request', function(resp) {
+          if ((loadingCb) && (typeof loadingCb == 'function')) {
+            loadingCb(resp);
+          }
         });
         ajax.url = this._generateUrl(this.user, this.app, this.label, this.projection, this.worksheet, null, null, this.domain, this.proto);
         ajax.generateRequest(); 
         ajax.method = verb;
-        var body = obj;
-        body._verb = verb;
+        
+        var formData = new FormData();
+        formData.append('_verb', verb);
         if (this.rowkey) {
-          body._rowkey = this.rowkey;
+          formData.append('_rowkey', this.rowkey);
         }
         if (this.globalkey) {
-          body._globalkey = this._globalkey;
+          formData.append('_globalkey', this._globalkey);
         }
+        for (var key in obj) {
+          formData.append(key, obj[key]);
+        }
+        ajax.body = formData;
         ajax.generateRequest();
         return ajax;
       },
 
-      append: function(obj) {
+      append: function(obj, successCb, errorCb, loadingCb) {
         return this._mutate('POST', obj, successCb, errorCb, loadingCb);
       },
 
-      update: function(obj) {
+      update: function(obj, successCb, errorCb, loadingCb) {
         return this._mutate('PUT', obj, successCb, errorCb, loadingCb);
       },
 
