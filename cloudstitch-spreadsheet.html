@@ -154,8 +154,8 @@ Example:
         if ((!this.user) || (!this.app)) {
           return this._loadError("Missing user or app");
         }
-        this.url = this._generateUrl(this.user, this.app, this.label, this.projection, this.worksheet, this.rowkey, this.globalkey, this.domain, this.proto);      
-        this.$.loader.generateRequest();        
+        this.url = this._generateUrl(this.user, this.app, this.label, this.projection, this.worksheet, this.rowkey, this.globalkey, this.domain, this.proto);
+        this.$.loader.generateRequest();
       },
 
       _mutate: function(verb, obj, successCb, errorCb, loadingCb) {
@@ -176,11 +176,16 @@ Example:
           }
         });
         ajax.url = this._generateUrl(this.user, this.app, this.label, this.projection, this.worksheet, null, null, this.domain, this.proto);
-        ajax.generateRequest(); 
-        ajax.method = verb;
-        
+        ajax.generateRequest();
+
         var formData = new FormData();
         formData.append('_verb', verb);
+
+        if (verb == 'PUT') {
+          verb = "POST";
+        }
+        ajax.method = verb;
+
         if (this.rowkey) {
           formData.append('_rowkey', this.rowkey);
         }
@@ -205,16 +210,16 @@ Example:
 
       _generateUrl: function(user, app, label, projection, worksheet, rowkey, globalkey, domain, proto) {
         var qd = {};
-        
+
         var query = [];
 
         if (projection == 'items') {
           query.push('_shape=items');
         }
 
-        var base;    
+        var base;
 
-        var protocol = '';        
+        var protocol = '';
         if (proto) {
           protocol = proto + ':';
         }
@@ -240,7 +245,7 @@ Example:
         }
 
         var path = user + '/' + app + '/datasource/' + label;
-        
+
         if (worksheet) {
           path += ('/' + worksheet);
         }
